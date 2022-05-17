@@ -73,7 +73,7 @@ def makeRecentItem(path, recentType):
     return makeItem(
         resizePath(path),
         f'Open Recent: {recentType}',
-        [TermAction('', f'code "{path}"')]
+        [TermAction('Open in Visual Studio Code', f'code "{path}"')]
     )
 
 
