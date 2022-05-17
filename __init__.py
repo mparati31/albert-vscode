@@ -17,7 +17,7 @@ __triggers__ = ['vs']
 __authors__ = 'mparati'
 
 iconPath = os.path.dirname(__file__) + '/icon.png'
-vscodeRecentsPath = Path.home() / '.config' / 'Code' / 'storage.json'
+vscodeRecentsPath = Path.home() / '.config' / 'Code' / 'User' / 'globalStorage' / 'storage.json'
 
 
 def getVscodeRecents():
@@ -28,7 +28,7 @@ def getVscodeRecents():
         return [], []
 
     for item in items:
-        if item['id'] == 'submenuitem.34':
+        if item['id'] == 'submenuitem.35':
             items_filtred = item
 
     recents = items_filtred['submenu']['items']
