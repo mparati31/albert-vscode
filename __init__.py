@@ -72,7 +72,7 @@ def startWithSpace(string):
 def makeRecentItem(path, recentType):
     return makeItem(
         resizePath(path),
-        f'Open Recent: {recentType}',
+        f'Open {recentType}',
         [TermAction('Open in Visual Studio Code', f'code "{path}"')]
     )
 
@@ -111,6 +111,8 @@ def handleQuery(query):
         if not string in el.lower():
             continue
 
-        items.append(makeRecentItem(el, 'Folder' if el in folders else 'File'))
+        elems = el.split('/')
+        el = '/'.join(elems[:-1]) + '/' + f'<b>{elems[-1]}</b>'
+        items.append(makeRecentItem(el, 'folder' if el in folders else 'file'))
 
     return items
