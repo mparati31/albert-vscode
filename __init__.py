@@ -14,7 +14,7 @@ from shutil import which
 __title__ = 'Visual Studio Code'
 __version__ = '0.4.3'
 __triggers__ = ['vs']
-__authors__ = 'mparati'
+__authors__ = 'mparati31'
 
 iconPath = os.path.dirname(__file__) + '/icon.png'
 vscodeRecentsPath = Path.home() / '.config' / 'Code' / 'User' / 'globalStorage' / 'storage.json'
@@ -41,7 +41,7 @@ def getVscodeRecents():
         elif recent['id'] == 'openRecentFile':
             files.append(recent['uri']['path'])
 
-    return folders, files
+    return files, folders
 
 
 def resizePath(path, maxchars=50):
@@ -56,13 +56,13 @@ def resizePath(path, maxchars=50):
 
     for part in parts:
         if len(part) == 0: continue
-        if len('.../' + part + '/' + shortPath) <= maxchars:
-            shortPath = '/' + part + shortPath
+        if len('.../{}/{}'.format(part, shortPath)) <= maxchars:
+            shortPath = '/{}{}'.format(part, shortPath)
             relativeLen += len(part)
         else:
             break
 
-    return '...' + shortPath
+    return '...{}'.format(shortPath)
 
 
 def startWithSpace(string):
@@ -70,10 +70,21 @@ def startWithSpace(string):
 
 
 def makeRecentItem(path, recentType):
+    resizedPath = resizePath(path)
+    pathSplits = resizedPath.split('/')
+    formatted_path = '{}/<b>{}</b>'.format('/'.join(pathSplits[:-1]), pathSplits[-1])
     return makeItem(
-        resizePath(path),
-        f'Open {recentType}',
+        formatted_path,
+        f'<i>Open Recent <b>{recentType}</b></i>',
         [TermAction('Open in Visual Studio Code', f'code "{path}"')]
+    )
+
+
+def makeNewWindowItem():
+    return makeItem(
+        '<b>New Empty Window</b>',
+        'Open new Visual Studio Code empty window',
+        [TermAction('Open in Visual Studio Code', 'code -n')]
     )
 
 
@@ -94,25 +105,28 @@ def handleQuery(query):
     if not which('code'):
         return makeItem('Visual Studio Code not installed')
 
-    string = query.string
+    query_str = query.string
 
-    if startWithSpace(string):
+    if startWithSpace(query_str):
         return None
 
-    string = string.strip().lower()
-    folders, files = getVscodeRecents()
+    query_str = query_str.strip().lower()
+    files, folders = getVscodeRecents()
 
     if not folders and not files:
         return makeItem('Recents Files and Folders not found')
 
     items = []
 
-    for el in folders + files:
-        if not string in el.lower():
+    for element_name in folders + files + ['New Empty Window']:
+        if not query_str in element_name.lower():
             continue
 
-        elems = el.split('/')
-        el = '/'.join(elems[:-1]) + '/' + f'<b>{elems[-1]}</b>'
-        items.append(makeRecentItem(el, 'folder' if el in folders else 'file'))
+        if element_name == 'New Empty Window':
+            item = makeNewWindowItem()
+        else:
+            item = makeRecentItem(element_name, 'Folder' if element_name in folders else 'File')
+
+        items.append(item)
 
     return items
