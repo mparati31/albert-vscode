@@ -4,6 +4,12 @@ Simple unofficial [albert-launcher](https://github.com/albertlauncher/albert) ex
 
 The trigger to activate the extension is `vs`.
 
+![title1](img/base.png)
+
+After the trigger you can insert the query to filter the results.
+
+![title1](img/query.png)
+
 ## Installation
 
 To install the extension type the following in your terminal:

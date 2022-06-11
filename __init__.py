@@ -28,7 +28,7 @@ def getVscodeRecents():
         return [], []
 
     for item in items:
-        if item['id'] == 'submenuitem.35':
+        if item['id'] == 'submenuitem.36':
             items_filtred = item
 
     recents = items_filtred['submenu']['items']
@@ -103,7 +103,7 @@ def handleQuery(query):
         return None
 
     if not which('code'):
-        return makeItem('Visual Studio Code not installed')
+        return makeItem('<b>Visual Studio Code not installed</b>')
 
     query_str = query.string
 
@@ -114,7 +114,7 @@ def handleQuery(query):
     files, folders = getVscodeRecents()
 
     if not folders and not files:
-        return makeItem('Recents Files and Folders not found')
+        return makeItem('<b>Recents Files and Folders not found</b>')
 
     items = []
 
