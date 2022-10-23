@@ -1,14 +1,14 @@
 # albert-vscode
 
-Simple unofficial [albert-launcher](https://github.com/albertlauncher/albert) extension that shows and opens recent Visual Studio Code files and folders.
+Simple [albert-launcher](https://github.com/albertlauncher/albert) extension that shows and opens recent Visual Studio Code files and folders.
 
 The trigger to activate the extension is `vs`.
 
-![title1](img/base.png)
+![trigger example](img/example.png)
 
 After the trigger you can insert the query to filter the results.
 
-![title1](img/query.png)
+![query example](img/example_query.png)
 
 ## Installation
 
@@ -19,3 +19,7 @@ git clone https://github.com/mparati31/albert-vscode ~/.local/share/albert/org.a
 ```
 
 Now active the extension: open albert's settings and go to `Extensions > Python > Visual Studio Code` and check the checkbox.
+
+## Note
+
+This extension may not work for older versions of Visual Studio Code, as the path to the `storage.json` file may be different or have a different structure.

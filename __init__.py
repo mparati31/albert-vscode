@@ -1,131 +1,158 @@
 # -*- coding: utf-8 -*-
 
-"""Open Visual Studio Code recents file and folders.
+"""Opens recent Visual Studio Code files and folders.
 
 Synopsis: <trigger> <filter>"""
 
-import os
 import json
-
-from albert import *
+import os
+from distutils.log import debug
 from pathlib import Path
 from shutil import which
+from typing import List, Literal, Optional, Tuple
 
-__title__ = 'Visual Studio Code'
-__version__ = '0.4.3'
-__triggers__ = ['vs']
-__authors__ = 'mparati31'
+from albert import *
 
-iconPath = os.path.dirname(__file__) + '/icon.png'
-vscodeRecentsPath = Path.home() / '.config' / 'Code' / 'User' / 'globalStorage' / 'storage.json'
+__title__ = "Visual Studio Code"
+__version__ = "0.4.3"
+__triggers__ = ["vs"]
+__autors__ = "Manuel Parati"
 
-
-def getVscodeRecents():
-    try:
-        storage = json.load(open(vscodeRecentsPath, 'r'))
-        items = storage['lastKnownMenubarData']['menus']['File']['items']
-    except:
-        return [], []
-
-    for item in items:
-        if item['id'] == 'submenuitem.36':
-            items_filtred = item
-
-    recents = items_filtred['submenu']['items']
-
-    folders = []
-    files = []
-    for recent in recents:
-        if recent['id'] == 'openRecentFolder':
-            folders.append(recent['uri']['path'])
-        elif recent['id'] == 'openRecentFile':
-            files.append(recent['uri']['path'])
-
-    return files, folders
+ICON_PATH = os.path.dirname(__file__) + "/icon.png"
+VSCODE_RECENT_PATH = Path.home() / ".config" / "Code" / "User" / "globalStorage" \
+                     / "storage.json"
+EXECUTABLE = which("code")
 
 
-def resizePath(path, maxchars=50):
-    if len(path) <= maxchars:
-        return path
-
-    parts = path.split('/')
-    parts.reverse()
-
-    relativeLen = 0
-    shortPath = ''
-
-    for part in parts:
-        if len(part) == 0: continue
-        if len('.../{}/{}'.format(part, shortPath)) <= maxchars:
-            shortPath = '/{}{}'.format(part, shortPath)
-            relativeLen += len(part)
-        else:
-            break
-
-    return '...{}'.format(shortPath)
+# Returns the following tuple: (recent files paths, recent folders paths).
+def get_visual_studio_code_recent() -> Tuple[List[str], List[str]]:
+    storage = json.load(open(VSCODE_RECENT_PATH, "r"))
+    menu_items = storage["lastKnownMenubarData"]["menus"]["File"]["items"]
+    file_menu_items = list(filter(
+        lambda item: item["id"] == "submenuitem.MenubarRecentMenu", menu_items))
+    submenu_recent_items = file_menu_items[0]["submenu"]["items"]
+    files = list(filter(
+        lambda item: item["id"] == "openRecentFile", submenu_recent_items))
+    folders = list(filter(
+        lambda item: item["id"] == "openRecentFolder", submenu_recent_items))
+    extract_path = lambda item: item["uri"]["path"]
+    files_paths = list(map(extract_path, files))
+    folders_paths = list(map(extract_path, folders))
+    return files_paths, folders_paths
 
 
-def startWithSpace(string):
-    return len(string) > 0 and not string.isspace() and string[0] != ' '
+# Returns the abbreviation of `path` that has `maxchars` character size.
+def resize_path(path: str | Path, maxchars: int = 45) -> str:
+    filepath = Path(path)
+    if len(str(filepath)) <= maxchars:
+        return str(filepath)
+    else:
+        parts = filepath.parts
+        # If the path is contains only the pathname, then it is returned as is.
+        if len(parts) == 1:
+            return str(filepath)
+        relative_len = 0
+        short_path = ""
+        # Iterates on the reverse path elements and adds them until the relative
+        # path exceeds `maxchars`.
+        for part in reversed(parts):
+            if len(part) == 0:
+                continue
+            if len(".../{}/{}".format(part, short_path)) <= maxchars:
+                short_path = "/{}{}".format(part, short_path)
+                relative_len += len(part)
+            else:
+                break
+        return "...{}".format(short_path)
 
 
-def makeRecentItem(path, recentType):
-    resizedPath = resizePath(path)
-    pathSplits = resizedPath.split('/')
-    formatted_path = '{}/<b>{}</b>'.format('/'.join(pathSplits[:-1]), pathSplits[-1])
-    return makeItem(
-        formatted_path,
-        f'<i>Open Recent <b>{recentType}</b></i>',
-        [TermAction('Open in Visual Studio Code', f'code "{path}"')]
-    )
+# Return True if string start with space.
+def start_with_space(string: str) -> bool:
+    return len(string) > 0 and not string.isspace() and string[0] != " "
 
 
-def makeNewWindowItem():
-    return makeItem(
-        '<b>New Empty Window</b>',
-        'Open new Visual Studio Code empty window',
-        [TermAction('Open in Visual Studio Code', 'code -n')]
-    )
-
-
-def makeItem(text, subtext='', actions=[]):
+# Return a item.
+def make_item(
+        text: str,
+        subtext: str = "",
+        actions: List[ProcAction] = []
+) -> Item:
     return Item(
-                id = __title__,
-                icon = iconPath,
-                text = text,
-                subtext = subtext,
-                actions = actions
-            )
+        id=__title__,
+        icon=ICON_PATH,
+        text=text,
+        subtext=subtext,
+        actions=actions
+    )
 
 
-def handleQuery(query):
+# Return an item that create a new window.
+def make_new_window_item() -> Item:
+    return make_item(
+        "New Empty Window",
+        "Open new Visual Studio Code empty window",
+        [ProcAction("Open in Visual Studio Code", [EXECUTABLE], "-n")]
+    )
+
+
+# Return a recent item.
+def make_recent_item(
+        path: str | Path,
+        text_underline: str,
+        recent_type: Literal["file", "folder"]
+) -> Item:
+    resized_path = resize_path(path)
+    path_splits = resized_path.split("/")
+    working_dir_path, filename = path_splits[:-1], path_splits[-1]
+    formatted_path = "{}/<b>{}</b>".format("/".join(working_dir_path), filename)
+    if text_underline != "" and not text_underline.isspace():
+        if text_underline in formatted_path:
+            formatted_path = formatted_path.replace(text_underline,
+                                                    "<u>{}</u>".format(text_underline))
+        else:
+            formatted_path = formatted_path.replace("...", "<u>...</u>")
+    return make_item(
+        formatted_path,
+        "Open Recent <b>{}</b>".format(recent_type),
+        [ProcAction("Open in Visual Studio Code", [EXECUTABLE, path])]
+    )
+
+
+def handleQuery(query: Query) -> Optional[List[Item]]:
     if not query.isTriggered:
         return None
 
-    if not which('code'):
-        return makeItem('<b>Visual Studio Code not installed</b>')
+    if not EXECUTABLE:
+        return make_item("Visual Studio Code not installed")
 
-    query_str = query.string
+    query_text = query.string
 
-    if startWithSpace(query_str):
+    debug("query: '{}'".format(query_text))
+
+    if start_with_space(query_text):
         return None
 
-    query_str = query_str.strip().lower()
-    files, folders = getVscodeRecents()
+    query_text = query_text.strip().lower()
+    files, folders = get_visual_studio_code_recent()
+
+    debug("files: {}".format(files))
+    debug("folders: {}".format(folders))
 
     if not folders and not files:
-        return makeItem('<b>Recents Files and Folders not found</b>')
+        return [
+            make_new_window_item(),
+            make_item("Recent Files and Folders not found")
+        ]
 
     items = []
-
-    for element_name in folders + files + ['New Empty Window']:
-        if not query_str in element_name.lower():
+    for element_name in folders + files + ["New Empty Window"]:
+        if query_text not in element_name.lower():
             continue
-
-        if element_name == 'New Empty Window':
-            item = makeNewWindowItem()
+        if element_name == "New Empty Window":
+            item = make_new_window_item()
         else:
-            item = makeRecentItem(element_name, 'Folder' if element_name in folders else 'File')
+            item = make_recent_item(element_name, query_text,
+                                    "folder" if element_name in folders else "file")
 
         items.append(item)
 
