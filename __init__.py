@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-v0.5 Stefan Grosser
+v0.5
   - convert to API 0.5
   - temporary removed rich html support due https://github.com/albertlauncher/albert/issues/1164
 """
@@ -38,14 +38,6 @@ class Plugin(QueryHandler):
     def description(self):
         return md_description
 
-    # def initialize(self):
-    #     info('initialize')
-
-    # def finalize(self):
-    #     info('finalize')
-
-
-
     # Returns the following tuple: (recent files paths, recent folders paths).
     def get_visual_studio_code_recent(self,) -> Tuple[List[str], List[str]]:
         storage = json.load(open(VSCODE_RECENT_PATH, "r"))
@@ -61,7 +53,6 @@ class Plugin(QueryHandler):
         files_paths = list(map(extract_path, files))
         folders_paths = list(map(extract_path, folders))
         return files_paths, folders_paths
-
 
     # Returns the abbreviation of `path` that has `maxchars` character size.
     def resize_path(self,path: str | Path, maxchars: int = 45) -> str:
@@ -87,7 +78,6 @@ class Plugin(QueryHandler):
                     break
             return "...{}".format(short_path)
 
-
     # Return a item.
     def make_item(self,
             text: str,
@@ -102,13 +92,13 @@ class Plugin(QueryHandler):
             actions=actions
         ))
 
-
     # Return an item that create a new window.
     def make_new_window_item(self) -> Item:
         return self.make_item(
             "New Empty Window",
             "Open new Visual Studio Code empty window",
-            [Action(id=md_id,text="Open in Visual Studio Code", callable=lambda: runDetachedProcess(cmdln=[EXECUTABLE]))]
+            [Action(id=md_id,text="Open in Visual Studio Code",
+            callable=lambda: runDetachedProcess(cmdln=[EXECUTABLE]))]
         )
 
     # Return a recent item.
@@ -124,7 +114,8 @@ class Plugin(QueryHandler):
         return self.make_item(
             formatted_path,
             "Open Recent {}".format(recent_type),
-            [Action(id=path,text="Open in Visual Studio Code", callable=lambda: runDetachedProcess(cmdln=[EXECUTABLE,path]))]
+            [Action(id=path,text="Open in Visual Studio Code",
+            callable=lambda: runDetachedProcess(cmdln=[EXECUTABLE,path]))]
         )
 
     def handleQuery(self,query: Query) -> Optional[List[Item]]:
@@ -143,7 +134,7 @@ class Plugin(QueryHandler):
         debug("vs recent files: {}".format(files))
         debug("vs recent folders: {}".format(folders))
 
-        if not folders and not files:   
+        if not folders and not files:
             return [
                 query.add(self.make_new_window_item()),
                 query.add(self.make_item("Recent Files and Folders not found"))
