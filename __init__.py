@@ -150,7 +150,7 @@ class Plugin(QueryHandler):
             ]
 
         items = []
-        for element_name in ["New Empty Window"] + vsfolders + files:
+        for element_name in ["New Empty Window"] + folders + files:
             if query_text not in element_name.lower():
                 continue
             if element_name == "New Empty Window":
