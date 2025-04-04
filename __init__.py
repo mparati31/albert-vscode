@@ -5,6 +5,9 @@ v0.5
   - temporary removed rich html support due https://github.com/albertlauncher/albert/issues/1164
 v0.6
   - convert to API 2.1
+v0.7
+  - convert to API 3.0
+  - make albert-vscode open a new window instead of opening the last workspace
 """
 
 import json
@@ -15,12 +18,12 @@ from albert import *
 
 
 md_name = "Visual Studio Code"
-md_iid = "2.1"
+md_iid = "3.0"
 md_description = "Open & search recent Visual Studio Code files and folders."
-md_id = "vs"
-md_version = "0.6"
-md_maintainers = ["@mparati31", "@bierchermuesli"]
+md_version = "0.7"
+md_authors = ["@mparati31", "@bierchermuesli", "@noah-boeckmann"]
 md_url = "https://github.com/mparati31/albert-vscode"
+md_license = "unknown license"
 
 
 class Plugin(PluginInstance, GlobalQueryHandler):
@@ -29,8 +32,12 @@ class Plugin(PluginInstance, GlobalQueryHandler):
     EXECUTABLE = which("code")
 
     def __init__(self):
-        GlobalQueryHandler.__init__(self, id=md_id, name=md_name, description=md_description, defaultTrigger="vs ")
-        PluginInstance.__init__(self, extensions=[self])
+        GlobalQueryHandler.__init__(self)
+        PluginInstance.__init__(self)
+
+    # Tells albert the default trigger, may be changed by user
+    def defaultTrigger(self):
+        return 'vs '
 
     # Returns the following tuple: (recent files paths, recent folders paths).
     def get_visual_studio_code_recent(
@@ -72,13 +79,13 @@ class Plugin(PluginInstance, GlobalQueryHandler):
             return "...{}".format(short_path)
 
     # Return a item.
-    def make_item(self, text: str, subtext: str = "", actions: List[Action] = []) -> Item:
-        return StandardItem(id=md_id, iconUrls=self.ICON, text=text, subtext=subtext, actions=actions)
+    def make_item(self, text: str, subtext: str = "", actions: List[Action] = []) -> StandardItem:
+        return StandardItem(id=self.id(), iconUrls=self.ICON, text=text, subtext=subtext, actions=actions)
 
     # Return an item that create a new window.
     def make_new_window_item(self) -> StandardItem:
         return self.make_item(
-            "New Empty Window", "Open new Visual Studio Code empty window", [Action(id=md_id, text="Open in Visual Studio Code", callable=lambda: runDetachedProcess(cmdln=[self.EXECUTABLE]))]
+            "New Empty Window", "Open new Visual Studio Code empty window", [Action(id=self.id(), text="Open in Visual Studio Code", callable=lambda: runDetachedProcess(cmdln=[self.EXECUTABLE, "-n"]))]
         )
 
     # Return a recent item.
@@ -120,3 +127,7 @@ class Plugin(PluginInstance, GlobalQueryHandler):
             items.append(item)
 
         return items
+
+    # avoid warning about calling a pure virtual function
+    def handleGlobalQuery(self, query):
+        return []
